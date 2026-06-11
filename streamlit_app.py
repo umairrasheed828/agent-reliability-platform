@@ -2,6 +2,9 @@ import streamlit as st
 
 from src.drift.engine import detect_drift
 from src.store.metrics_store import all_runs, count_runs, runs_by_cohort
+from src.store.metrics_store import (
+    latest_calibration,
+)
 
 st.set_page_config(page_title="Agent Reliability Platform", layout="wide")
 st.title("Agent Reliability Platform")
@@ -51,6 +54,20 @@ col3.metric(
 
 st.subheader("Drift verdict (baseline vs recent)")
 st.code(report.summary())
+
+st.subheader("Calibration (live judge vs P4 anchor)")
+verdict = latest_calibration()
+if verdict is None:
+    st.info("No calibration run yet — run the offline P4 cross-check.")
+else:
+    if verdict.aligned:
+        st.success("Live judge is ALIGNED with the calibrated P4 anchor.")
+    else:
+        st.warning("Live judge has DIVERGED from the P4 anchor (calibration drift).")
+    cc1, cc2 = st.columns(2)
+    cc1.metric("Faithfulness MAE (vs anchor)", f"{verdict.faithfulness_mae:.2f}")
+    cc2.metric("Relevance MAE (vs anchor)", f"{verdict.relevance_mae:.2f}")
+    st.code(verdict.summary())
 
 st.subheader("Quality over time")
 ordered = sorted(all_runs(), key=lambda r: r.timestamp)

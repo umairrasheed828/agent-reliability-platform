@@ -3,6 +3,7 @@ import sqlite3
 from pathlib import Path
 
 from src.scoring.record import ScoredRun
+from src.scoring.calibration import CalibrationVerdict
 
 DB_PATH = Path("data/metrics.db")
 
@@ -105,3 +106,61 @@ def recent_runs(n: int, db_path: Path = DB_PATH) -> list[ScoredRun]:
             "SELECT * FROM runs ORDER BY timestamp DESC LIMIT ?", (n,)
         ).fetchall()
     return [_row_to_run(r) for r in reversed(rows)]  # back to chronological order
+
+
+def init_calibration(db_path: Path = DB_PATH) -> None:
+    with _connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS calibration (
+                id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp          TEXT NOT NULL,
+                n                  INTEGER NOT NULL,
+                faithfulness_mae   REAL NOT NULL,
+                relevance_mae      REAL NOT NULL,
+                faithfulness_kappa REAL NOT NULL,
+                relevance_kappa    REAL NOT NULL,
+                aligned            INTEGER NOT NULL
+            )
+            """
+        )
+        conn.commit()
+
+
+def insert_calibration(v: CalibrationVerdict, db_path: Path = DB_PATH) -> None:
+    with _connect(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO calibration (timestamp, n, faithfulness_mae, relevance_mae,
+                faithfulness_kappa, relevance_kappa, aligned)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                v.timestamp,
+                v.n,
+                v.faithfulness_mae,
+                v.relevance_mae,
+                v.faithfulness_kappa,
+                v.relevance_kappa,
+                int(v.aligned),
+            ),
+        )
+        conn.commit()
+
+
+def latest_calibration(db_path: Path = DB_PATH) -> CalibrationVerdict | None:
+    with _connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT * FROM calibration ORDER BY timestamp DESC LIMIT 1"
+        ).fetchone()
+    if row is None:
+        return None
+    return CalibrationVerdict(
+        timestamp=row["timestamp"],
+        n=row["n"],
+        faithfulness_mae=row["faithfulness_mae"],
+        relevance_mae=row["relevance_mae"],
+        faithfulness_kappa=row["faithfulness_kappa"],
+        relevance_kappa=row["relevance_kappa"],
+        aligned=bool(row["aligned"]),
+    )

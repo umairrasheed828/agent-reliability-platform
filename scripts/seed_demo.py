@@ -12,6 +12,12 @@ from src.runner import load_probes
 from src.scoring.record import ScoredRun
 from src.store.metrics_store import DB_PATH, init_store, insert_run
 
+from src.scoring.calibration import CalibrationVerdict
+from src.store.metrics_store import (
+    init_calibration,
+    insert_calibration,
+)
+
 _PATH = [
     "supervisor",
     "researcher",
@@ -39,6 +45,23 @@ def _record(
         judge_model="gpt-4o-mini",
         cohort=cohort,
         rationale="(demo seed)",
+    )
+
+
+def seed_calibration(db_path: Path = DB_PATH) -> None:
+    """Seed one demo calibration verdict (mirrors P4's real benchmark)."""
+    init_calibration(db_path)
+    insert_calibration(
+        CalibrationVerdict(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            n=24,
+            faithfulness_mae=0.46,
+            relevance_mae=0.20,
+            faithfulness_kappa=0.55,
+            relevance_kappa=0.58,
+            aligned=True,
+        ),
+        db_path,
     )
 
 
@@ -73,6 +96,8 @@ def seed(db_path: Path = DB_PATH, seed_value: int = 0) -> None:
             ),
             db_path,
         )
+
+    seed_calibration(db_path)
 
 
 if __name__ == "__main__":
