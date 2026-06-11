@@ -1,0 +1,10 @@
+services:
+  dashboard:
+    build: .
+    container_name: arp-dashboard
+    env_file:
+      - .env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data   # persist the metrics db across restarts
