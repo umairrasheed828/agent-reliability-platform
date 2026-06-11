@@ -1,4 +1,4 @@
-from judgekit import Axis, Judgment, LLMJudge, Sample, openai_complete
+from judgekit import Axis, Judge, Judgment, LLMJudge, Sample, openai_complete
 
 from src.config import settings
 
@@ -33,7 +33,7 @@ def build_judge() -> LLMJudge:
     return LLMJudge(AXES, openai_complete(model=settings.judge_model))
 
 
-def score_run(judge: LLMJudge, question: str, output: str, context: str) -> Judgment:
+def score_run(judge: Judge, question: str, output: str, context: str) -> Judgment:
     """Score one agent run on the calibrated faithfulness/relevance rubric."""
     sample = Sample(input=question, output=output, context=context)
     return judge.score(sample)
