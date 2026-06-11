@@ -89,3 +89,19 @@ def count_runs(db_path: Path = DB_PATH) -> int:
     with _connect(db_path) as conn:
         row = conn.execute("SELECT COUNT(*) AS n FROM runs").fetchone()
     return int(row["n"])
+
+
+def runs_by_cohort(cohort: str, db_path: Path = DB_PATH) -> list[ScoredRun]:
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT * FROM runs WHERE cohort = ? ORDER BY timestamp", (cohort,)
+        ).fetchall()
+    return [_row_to_run(r) for r in rows]
+
+
+def recent_runs(n: int, db_path: Path = DB_PATH) -> list[ScoredRun]:
+    with _connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT * FROM runs ORDER BY timestamp DESC LIMIT ?", (n,)
+        ).fetchall()
+    return [_row_to_run(r) for r in reversed(rows)]  # back to chronological order
