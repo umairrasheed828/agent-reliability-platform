@@ -24,6 +24,26 @@ pythonpath = ["."]
 
 [tool.uv.sources]
 judgekit = { git = "https://github.com/umairrasheed828/judgekit" }
+torch = { index = "pytorch-cu128" }
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
+
+[project.optional-dependencies]
+gpu = [
+    "torch",
+    "transformers",
+    "peft",
+    "bitsandbytes",
+    "accelerate",
+    "huggingface_hub",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.mypy.overrides]]
+module = ["torch.*", "transformers.*", "peft.*", "bitsandbytes.*", "accelerate.*"]
+ignore_missing_imports = true
